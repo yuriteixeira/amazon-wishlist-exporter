@@ -1,0 +1,6 @@
+{
+    "require": {
+        "guzzle/guzzle": "*",
+        "symfony/dom-crawler": "*"
+    }
+}
