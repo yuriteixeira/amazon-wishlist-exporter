@@ -127,24 +127,6 @@ RESPONSE;
 
     public function testExecuteOnUsWithSinglePageOfItems()
     {
-        $responseContentFixture = <<<RESPONSE
-<div id="item_1">
-    <a id="itemName_1" href="/product-1">Product 1</a>
-    <div id="itemPrice_1">$ 1.99</div>
-    <div id="itemImage_1"><img src="test://product-1.png" /></div>
-</div>
-<div id="item_2">
-    <a id="itemName_2" href="/product-2">Product 2</a>
-    <div id="itemPrice_2">$ 2.99</div>
-    <div id="itemImage_2"><img src="test://product-2.png" /></div>
-</div>
-<div id="item_3">
-    <a id="itemName_3" href="/product-3">Product 3</a>
-    <div id="itemPrice_3">$ 3.99</div>
-    <div id="itemImage_3"><img src="test://product-3.png" /></div>
-</div>
-RESPONSE;
-
         $responseMock = $this->getMock('\\GuzzleHttp\\Message\\ResponseInterface');
         $responseMock
             ->expects($this->exactly(2))
@@ -155,7 +137,7 @@ RESPONSE;
         $responseMock
             ->expects($this->exactly(2))
             ->method('getBody')
-            ->will($this->returnValue($responseContentFixture))
+            ->will($this->returnValue($this->responseContentPage1Fixture))
         ;
 
         $this->clientMock
@@ -184,24 +166,6 @@ RESPONSE;
 
     public function testExecuteOnUkWithSinglePageOfItems()
     {
-        $responseContentFixture = <<<RESPONSE
-<div id="item_1">
-    <a id="itemName_1" href="/product-1">Product 1</a>
-    <div id="itemPrice_1">$ 1.99</div>
-    <div id="itemImage_1"><img src="test://product-1.png" /></div>
-</div>
-<div id="item_2">
-    <a id="itemName_2" href="/product-2">Product 2</a>
-    <div id="itemPrice_2">$ 2.99</div>
-    <div id="itemImage_2"><img src="test://product-2.png" /></div>
-</div>
-<div id="item_3">
-    <a id="itemName_3" href="/product-3">Product 3</a>
-    <div id="itemPrice_3">$ 3.99</div>
-    <div id="itemImage_3"><img src="test://product-3.png" /></div>
-</div>
-RESPONSE;
-
         $responseMock = $this->getMock('\\GuzzleHttp\\Message\\ResponseInterface');
         $responseMock
             ->expects($this->exactly(2))
@@ -212,7 +176,7 @@ RESPONSE;
         $responseMock
             ->expects($this->exactly(2))
             ->method('getBody')
-            ->will($this->returnValue($responseContentFixture))
+            ->will($this->returnValue($this->responseContentPage1Fixture))
         ;
 
         $this->clientMock
@@ -234,6 +198,56 @@ RESPONSE;
             ['Product 1', 1.99, 'http://www.amazon.co.uk/product-1', 'test://product-1.png'],
             ['Product 2', 2.99, 'http://www.amazon.co.uk/product-2', 'test://product-2.png'],
             ['Product 3', 3.99, 'http://www.amazon.co.uk/product-3', 'test://product-3.png'],
+        ];
+
+        $this->assertEquals($expectedResult, $result);
+    }
+
+    public function testExecuteOnUsWithMultiplePagesOfItems()
+    {
+        $responseMock = $this->getMock('\\GuzzleHttp\\Message\\ResponseInterface');
+        $responseMock
+            ->expects($this->exactly(4))
+            ->method('getStatusCode')
+            ->will($this->returnValue(200))
+        ;
+
+        $responseMock
+            ->expects($this->exactly(4))
+            ->method('getBody')
+            ->will($this->onConsecutiveCalls(
+                    $this->responseContentPage1Fixture,
+                    $this->responseContentPage2Fixture,
+                    $this->responseContentPage3Fixture,
+                    $this->responseContentPage3Fixture
+                ))
+        ;
+
+        $this->clientMock
+            ->expects($this->exactly(4))
+            ->method('get')
+            ->will($this->returnValue($responseMock))
+        ;
+
+        $this->loggerMock
+            ->expects($this->exactly(6))
+            ->method('log')
+            ->withAnyParameters()
+        ;
+
+        $command = new CsvExportCommand('US', 'ABC123', $this->clientMock, $this->loggerMock);
+        $result = $command->execute();
+
+        $expectedResult = [
+            ['Product 1', 1.99, 'http://www.amazon.com/product-1', 'test://product-1.png'],
+            ['Product 2', 2.99, 'http://www.amazon.com/product-2', 'test://product-2.png'],
+            ['Product 3', 3.99, 'http://www.amazon.com/product-3', 'test://product-3.png'],
+            ['Product 4', 4.99, 'http://www.amazon.com/product-4', 'test://product-4.png'],
+            ['Product 5', 5.99, 'http://www.amazon.com/product-5', 'test://product-5.png'],
+            ['Product 6', 6.99, 'http://www.amazon.com/product-6', 'test://product-6.png'],
+            ['Product 7', 7.99, 'http://www.amazon.com/product-7', 'test://product-7.png'],
+            ['Product 8', 8.99, 'http://www.amazon.com/product-8', 'test://product-8.png'],
+            ['Product 9', 9.99, 'http://www.amazon.com/product-9', 'test://product-9.png'],
         ];
 
         $this->assertEquals($expectedResult, $result);
@@ -287,6 +301,5 @@ RESPONSE;
         ];
 
         $this->assertEquals($expectedResult, $result);
-
     }
 }
