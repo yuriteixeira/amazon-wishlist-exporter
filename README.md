@@ -1,6 +1,6 @@
-# Amazon Whishlist Exporter
+# Amazon Wishlist Exporter
 
-Simple script that parses a public amazon whishlist and export the items to a CSV file.
+Simple script that parses a public amazon wishlist and export the items to a CSV file.
 
 ## Requirements 
 
@@ -15,7 +15,7 @@ Simple script that parses a public amazon whishlist and export the items to a CS
 
 ## Running
 
-- Just type inside the cloned repo directory: `php run.php <your_amazon_whishlist_id>` (you can get the id visiting your wishlist, it's part of the URL).
+- Just type inside the cloned repo directory: `php run.php <your_amazon_wishlist_id>` (you can get the id visiting your wishlist, it's part of the URL).
 
 
 ## Next steps
