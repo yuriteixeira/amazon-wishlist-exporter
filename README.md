@@ -1,5 +1,7 @@
 # Amazon Wishlist Exporter
 
+[![Build Status](https://travis-ci.org/yuriteixeira/amazon-wishlist-exporter.svg?branch=master)](https://travis-ci.org/yuriteixeira/amazon-wishlist-exporter)
+
 Simple script that parses a public amazon wishlist and export the items to a CSV file.
 
 ## Requirements 
