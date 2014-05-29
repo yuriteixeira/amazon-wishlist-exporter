@@ -15,7 +15,7 @@ Simple script that parses a public amazon wishlist and export the items to a CSV
 
 ## Running
 
-- Just type inside the cloned repo directory: `php run.php <your_amazon_wishlist_id>` (you can get the id visiting your wishlist, it's part of the URL).
+- Just type inside the cloned repo directory: `./awx <your_amazon_wishlist_id>` (you can get the id visiting your wishlist, it's part of the URL).
 
 
 ## Next steps

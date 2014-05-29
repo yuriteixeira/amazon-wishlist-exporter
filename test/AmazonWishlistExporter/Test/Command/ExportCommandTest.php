@@ -2,9 +2,9 @@
 
 namespace AmazonWishlistExporter\Test\Command;
 
-use AmazonWishlistExporter\Command\CsvExportCommand;
+use AmazonWishlistExporter\Command\ExportCommand;
 
-class CsvExportCommandTest extends \PHPUnit_Framework_TestCase
+class ExportCommandTest extends \PHPUnit_Framework_TestCase
 {
     /**
      * @var \PHPUnit_Framework_MockObject_MockObject
@@ -89,14 +89,20 @@ RESPONSE;
     <div id="itemImage_9"><img src="test://product-9.png" /></div>
 </div>
 RESPONSE;
+
+        $this->unexpectedResponse = <<<RESPONSE
+<div id="bad-bad-server">
+    <h1>No donut for you...</h1>
+</div>
+RESPONSE;
     }
 
     public function testExecuteWithInvalidArguments()
     {
         $this->setExpectedException('\\InvalidArgumentException');
-        $command = new CsvExportCommand('XX', 'ABC123', $this->clientMock, $this->loggerMock);
+        $command = new ExportCommand('XX', 'ABC123', $this->clientMock, $this->loggerMock);
         $command->execute();
-    }
+    }  
 
     public function testExecuteWithInvalidWishlistId()
     {
@@ -120,7 +126,40 @@ RESPONSE;
             ->withAnyParameters()
         ;
 
-        $command = new CsvExportCommand('US', 'ABC123', $this->clientMock, $this->loggerMock);
+        $command = new ExportCommand('US', 'ABC123', $this->clientMock, $this->loggerMock);
+        $rows = $command->execute();
+        $this->assertEmpty($rows);
+    }
+
+    public function testExecuteWithNotPublicWishlistOrUnexpectedContent()
+    {
+        $responseMock = $this->getMock('\\GuzzleHttp\\Message\\ResponseInterface');
+        $responseMock
+            ->expects($this->once())
+            ->method('getStatusCode')
+            ->will($this->returnValue(200))
+        ;
+
+        $responseMock
+            ->expects($this->exactly(1))
+            ->method('getBody')
+            ->will($this->returnValue($this->unexpectedResponse))
+        ;
+
+        $this->clientMock
+            ->expects($this->once())
+            ->method('get')
+            ->will($this->returnValue($responseMock))
+        ;
+
+        // TODO: Check how to check multiple calls with different parameters
+        $this->loggerMock
+            ->expects($this->exactly(3))
+            ->method('log')
+            ->withAnyParameters()
+        ;
+
+        $command = new ExportCommand('US', 'ABC123', $this->clientMock, $this->loggerMock);
         $rows = $command->execute();
         $this->assertEmpty($rows);
     }
@@ -152,7 +191,7 @@ RESPONSE;
             ->withAnyParameters()
         ;
 
-        $command = new CsvExportCommand('US', 'ABC123', $this->clientMock, $this->loggerMock);
+        $command = new ExportCommand('US', 'ABC123', $this->clientMock, $this->loggerMock);
         $result = $command->execute();
 
         $expectedResult = [
@@ -191,7 +230,7 @@ RESPONSE;
             ->withAnyParameters()
         ;
 
-        $command = new CsvExportCommand('UK', 'ABC123', $this->clientMock, $this->loggerMock);
+        $command = new ExportCommand('UK', 'ABC123', $this->clientMock, $this->loggerMock);
         $result = $command->execute();
 
         $expectedResult = [
@@ -235,7 +274,7 @@ RESPONSE;
             ->withAnyParameters()
         ;
 
-        $command = new CsvExportCommand('US', 'ABC123', $this->clientMock, $this->loggerMock);
+        $command = new ExportCommand('US', 'ABC123', $this->clientMock, $this->loggerMock);
         $result = $command->execute();
 
         $expectedResult = [
@@ -285,7 +324,7 @@ RESPONSE;
             ->withAnyParameters()
         ;
 
-        $command = new CsvExportCommand('UK', 'ABC123', $this->clientMock, $this->loggerMock);
+        $command = new ExportCommand('UK', 'ABC123', $this->clientMock, $this->loggerMock);
         $result = $command->execute();
 
         $expectedResult = [

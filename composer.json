@@ -1,4 +1,18 @@
 {
+  "name": "yuriteixeira/amazon-wishlist-exporter",
+  "description": "Simple script that parses a public amazon wishlist and export the items to a CSV file.",
+  "keywords": [
+    "amazon",
+    "wishlist",
+    "export",
+    "csv",
+  ],
+  "bin": [
+    "awx"
+  ],
+  "config": {
+    "bin-dir": "bin"
+  },
   "autoload": {
     "psr-0": {
       "AmazonWishlistExporter": "src/",

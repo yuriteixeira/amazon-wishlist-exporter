@@ -6,7 +6,7 @@ use AmazonWishlistExporter\Logger\LoggerInterface;
 use GuzzleHttp\ClientInterface;
 use Symfony\Component\DomCrawler\Crawler;
 
-class CsvExportCommand implements CommandInterface
+class ExportCommand implements CommandInterface
 {
     /**
      * @var string
@@ -45,23 +45,24 @@ class CsvExportCommand implements CommandInterface
         $page = 1;
         $lastItemsContent = null;
         $rows = [];
-
-        $this->logger->log("Exporting...");
-
         $baseUrl = $this->getBaseUrlForCountry($this->countryCode);
-
+        $wishlistBaseUrl = "{$baseUrl}/registry/wishlist/{$this->whishlistId}?layout=standard";
+        
         if (!$baseUrl) {
             throw new \InvalidArgumentException("Country code {$this->countryCode} is not supported.");
         }
 
+        $this->logger->log("Exporting: {$wishlistBaseUrl}");
+
         while (true) {
-            $response = $this->client->get("{$baseUrl}/registry/wishlist/{$this->whishlistId}?layout=standard&page={$page}");
+            $url = "{$wishlistBaseUrl}&page={$page}";
+            $response = $this->client->get($url);
             $responseContent = (string) $response->getBody();
             $crawler = new Crawler($responseContent);
             $items = $crawler->filter('[id^=item_]');
 
-            if ($response->getStatusCode() != 200) {
-                $this->logger->log('Empty content');
+            if ($response->getStatusCode() != 200 || !$items->count()) {
+                $this->logger->log('Empty content (are you sure that you set your list as public?)');
                 break;
             }
 
@@ -73,19 +74,23 @@ class CsvExportCommand implements CommandInterface
             $items->each(function (Crawler $item) use (&$rows, $baseUrl) {
                 $name = trim($item->filter('[id^=itemName_]')->text());
                 $price = (float) str_replace('$', '', trim($item->filter('[id^=itemPrice_]')->text()));
-                $url = $baseUrl . ($item->filter('[id^=itemName_]')->attr('href') ?: $item->filter('[id^=itemInfo_] .a-link-normal')->attr('href'));
-                $image = trim($item->filter('[id^=itemImage_] img')->attr('src'));
 
+                $url = 
+                    $item->filter('[id^=itemName_]')->attr('href') ?
+                        $baseUrl . $item->filter('[id^=itemName_]')->attr('href') : 
+                        $item->filter('[id^=itemInfo_] .a-link-normal')->attr('href');
+
+                $image = trim($item->filter('[id^=itemImage_] img')->attr('src'));
                 $rows[] = array($name, $price, $url, $image);
             });
 
-            $this->logger->log("Parsed page {$page}");
+            $this->logger->log("Parsed page {$page} - Url: {$url}");
 
             $lastItemsContent = $items->text();
             ++$page;
         }
 
-        $this->logger->log("Finished.");
+        $this->logger->log("Finished");
 
         return $rows;
     }
