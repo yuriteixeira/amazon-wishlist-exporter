@@ -5,7 +5,7 @@
     "amazon",
     "wishlist",
     "export",
-    "csv",
+    "csv"
   ],
   "bin": [
     "awx"
