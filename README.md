@@ -22,6 +22,5 @@ Simple script that parses a public amazon wishlist and export the items to a CSV
 
 ## Next steps
 
-- Make this project available on packagist (easy install, always available on any directory)
 - Export to Google Docs (with images of the products, options to convert the price into any other currency)
 - Access private lists
