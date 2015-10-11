@@ -3,6 +3,7 @@
 namespace AmazonWishlistExporter\Test\Command;
 
 use AmazonWishlistExporter\Command\ExportCommand;
+use AmazonWishlistExporter\Crawler\AmazonCrawler;
 
 class ExportCommandTest extends \PHPUnit_Framework_TestCase
 {
@@ -100,9 +101,10 @@ RESPONSE;
     public function testExecuteWithInvalidArguments()
     {
         $this->setExpectedException('\\InvalidArgumentException');
-        $command = new ExportCommand('XX', 'ABC123', $this->clientMock, $this->loggerMock);
-        $command->execute();
-    }  
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock);
+        $crawler->crawl('ABC123', 'XX');
+
+    }
 
     public function testExecuteWithInvalidWishlistId()
     {
@@ -110,24 +112,22 @@ RESPONSE;
         $responseMock
             ->expects($this->once())
             ->method('getStatusCode')
-            ->will($this->returnValue(404))
-        ;
+            ->will($this->returnValue(404));
 
         $this->clientMock
             ->expects($this->once())
             ->method('get')
-            ->will($this->returnValue($responseMock))
-        ;
+            ->will($this->returnValue($responseMock));
 
         // TODO: Check how to check multiple calls with different parameters
         $this->loggerMock
             ->expects($this->exactly(3))
             ->method('log')
-            ->withAnyParameters()
-        ;
+            ->withAnyParameters();
 
-        $command = new ExportCommand('US', 'ABC123', $this->clientMock, $this->loggerMock);
-        $rows = $command->execute();
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock);
+        $rows = $crawler->crawl('ABC123', 'US');
+
         $this->assertEmpty($rows);
     }
 
@@ -137,30 +137,27 @@ RESPONSE;
         $responseMock
             ->expects($this->once())
             ->method('getStatusCode')
-            ->will($this->returnValue(200))
-        ;
+            ->will($this->returnValue(200));
 
         $responseMock
             ->expects($this->exactly(1))
             ->method('getBody')
-            ->will($this->returnValue($this->unexpectedResponse))
-        ;
+            ->will($this->returnValue($this->unexpectedResponse));
 
         $this->clientMock
             ->expects($this->once())
             ->method('get')
-            ->will($this->returnValue($responseMock))
-        ;
+            ->will($this->returnValue($responseMock));
 
         // TODO: Check how to check multiple calls with different parameters
         $this->loggerMock
             ->expects($this->exactly(3))
             ->method('log')
-            ->withAnyParameters()
-        ;
+            ->withAnyParameters();
 
-        $command = new ExportCommand('US', 'ABC123', $this->clientMock, $this->loggerMock);
-        $rows = $command->execute();
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock);
+        $rows = $crawler->crawl('ABC123', 'US');
+
         $this->assertEmpty($rows);
     }
 
@@ -170,29 +167,27 @@ RESPONSE;
         $responseMock
             ->expects($this->exactly(2))
             ->method('getStatusCode')
-            ->will($this->returnValue(200))
-        ;
+            ->will($this->returnValue(200));
 
         $responseMock
             ->expects($this->exactly(2))
             ->method('getBody')
-            ->will($this->returnValue($this->responseContentPage1Fixture))
-        ;
+            ->will($this->returnValue($this->responseContentPage1Fixture));
 
         $this->clientMock
             ->expects($this->exactly(2))
             ->method('get')
-            ->will($this->returnValue($responseMock))
-        ;
+            ->will($this->returnValue($responseMock));
 
         $this->loggerMock
             ->expects($this->exactly(4))
             ->method('log')
-            ->withAnyParameters()
-        ;
+            ->withAnyParameters();
 
-        $command = new ExportCommand('US', 'ABC123', $this->clientMock, $this->loggerMock);
-        $result = $command->execute();
+
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock);
+        $rows = $crawler->crawl('ABC123', 'US');
+
 
         $expectedResult = [
             ['Product 1', 1.99, 'http://www.amazon.com/product-1', 'test://product-1.png'],
@@ -200,7 +195,7 @@ RESPONSE;
             ['Product 3', 3.99, 'http://www.amazon.com/product-3', 'test://product-3.png'],
         ];
 
-        $this->assertEquals($expectedResult, $result);
+        $this->assertEquals($expectedResult, $rows);
     }
 
     public function testExecuteOnUkWithSinglePageOfItems()
@@ -209,29 +204,26 @@ RESPONSE;
         $responseMock
             ->expects($this->exactly(2))
             ->method('getStatusCode')
-            ->will($this->returnValue(200))
-        ;
+            ->will($this->returnValue(200));
 
         $responseMock
             ->expects($this->exactly(2))
             ->method('getBody')
-            ->will($this->returnValue($this->responseContentPage1Fixture))
-        ;
+            ->will($this->returnValue($this->responseContentPage1Fixture));
 
         $this->clientMock
             ->expects($this->exactly(2))
             ->method('get')
-            ->will($this->returnValue($responseMock))
-        ;
+            ->will($this->returnValue($responseMock));
 
         $this->loggerMock
             ->expects($this->exactly(4))
             ->method('log')
-            ->withAnyParameters()
-        ;
+            ->withAnyParameters();
 
-        $command = new ExportCommand('UK', 'ABC123', $this->clientMock, $this->loggerMock);
-        $result = $command->execute();
+
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock);
+        $result = $crawler->crawl('ABC123', 'UK');
 
         $expectedResult = [
             ['Product 1', 1.99, 'http://www.amazon.co.uk/product-1', 'test://product-1.png'],
@@ -248,34 +240,29 @@ RESPONSE;
         $responseMock
             ->expects($this->exactly(4))
             ->method('getStatusCode')
-            ->will($this->returnValue(200))
-        ;
+            ->will($this->returnValue(200));
 
         $responseMock
             ->expects($this->exactly(4))
             ->method('getBody')
             ->will($this->onConsecutiveCalls(
-                    $this->responseContentPage1Fixture,
-                    $this->responseContentPage2Fixture,
-                    $this->responseContentPage3Fixture,
-                    $this->responseContentPage3Fixture
-                ))
-        ;
+                $this->responseContentPage1Fixture,
+                $this->responseContentPage2Fixture,
+                $this->responseContentPage3Fixture,
+                $this->responseContentPage3Fixture
+            ));
 
         $this->clientMock
             ->expects($this->exactly(4))
             ->method('get')
-            ->will($this->returnValue($responseMock))
-        ;
+            ->will($this->returnValue($responseMock));
 
         $this->loggerMock
             ->expects($this->exactly(6))
             ->method('log')
-            ->withAnyParameters()
-        ;
-
-        $command = new ExportCommand('US', 'ABC123', $this->clientMock, $this->loggerMock);
-        $result = $command->execute();
+            ->withAnyParameters();
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock);
+        $result = $crawler->crawl('ABC123', 'US');
 
         $expectedResult = [
             ['Product 1', 1.99, 'http://www.amazon.com/product-1', 'test://product-1.png'],
@@ -298,8 +285,7 @@ RESPONSE;
         $responseMock
             ->expects($this->exactly(4))
             ->method('getStatusCode')
-            ->will($this->returnValue(200))
-        ;
+            ->will($this->returnValue(200));
 
         $responseMock
             ->expects($this->exactly(4))
@@ -309,24 +295,21 @@ RESPONSE;
                 $this->responseContentPage2Fixture,
                 $this->responseContentPage3Fixture,
                 $this->responseContentPage3Fixture
-            ))
-        ;
+            ));
 
         $this->clientMock
             ->expects($this->exactly(4))
             ->method('get')
-            ->will($this->returnValue($responseMock))
-        ;
+            ->will($this->returnValue($responseMock));
 
         $this->loggerMock
             ->expects($this->exactly(6))
             ->method('log')
-            ->withAnyParameters()
-        ;
+            ->withAnyParameters();
 
-        $command = new ExportCommand('UK', 'ABC123', $this->clientMock, $this->loggerMock);
-        $result = $command->execute();
 
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock);
+        $result = $crawler->crawl('ABC123', 'UK');
         $expectedResult = [
             ['Product 1', 1.99, 'http://www.amazon.co.uk/product-1', 'test://product-1.png'],
             ['Product 2', 2.99, 'http://www.amazon.co.uk/product-2', 'test://product-2.png'],

@@ -24,7 +24,7 @@ class AmazonCrawler
     private $client;
 
 
-    public function __construct(LoggerInterface $logger, ClientInterface $client)
+    public function __construct(ClientInterface $client, LoggerInterface $logger)
     {
         $this->logger = $logger;
         $this->client = $client;
