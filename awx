@@ -25,19 +25,11 @@ if (!defined('COMPOSER_AUTOLOADER')) {
 require COMPOSER_AUTOLOADER;
 
 $logger = new \AmazonWishlistExporter\Logger\StandardOutputLogger();
+#$logger = new  \AmazonWishlistExporter\Logger\NullLogger();
 $client = new \GuzzleHttp\Client();
 $wishlistId = $argv[1];
 $countryCode = $argv[2];
 $pathToSave = $argv[3];
 
-$command = new \AmazonWishlistExporter\Command\ExportCommand($countryCode, $wishlistId, $client, $logger);
+$command = new \AmazonWishlistExporter\Command\ExportCommand($countryCode, $wishlistId, $client, $logger, $pathToSave);
 $items = $command->execute();
-
-// Saving each item row to the file
-$fh = fopen($pathToSave, 'w');
-
-foreach ($items as $item) {
-	fputcsv($fh, $item);	
-}
-
-fclose($fh);
