@@ -49,6 +49,14 @@ class AmazonCrawler
         return $baseUrl;
     }
 
+    private function getCurrencyUnits(){
+        return array(
+            'USD' => '$',
+            'EUR' => 'EUR'
+
+        );
+    }
+
     public function crawl($wishlistId, $countryCode)
     {
         $page = 1;
@@ -82,7 +90,7 @@ class AmazonCrawler
 
             $items->each(function (Crawler $item) use (&$rows, $baseUrl) {
                 $name = trim($item->filter('[id^=itemName_]')->text());
-                $price = (float)str_replace('$', '', trim($item->filter('[id^=itemPrice_]')->text()));
+                $price = str_replace($this->getCurrencyUnits(), '', trim($item->filter('[id^=itemPrice_]')->text()));
 
                 $url =
                     $item->filter('[id^=itemName_]')->attr('href') ?
