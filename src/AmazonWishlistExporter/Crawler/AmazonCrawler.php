@@ -57,7 +57,10 @@ class AmazonCrawler
      */
     private $client;
 
-
+    /**
+     * @param ClientInterface $client
+     * @param LoggerInterface $logger
+     */
     public function __construct(ClientInterface $client, LoggerInterface $logger)
     {
         $this->logger = $logger;
@@ -98,6 +101,11 @@ class AmazonCrawler
         return $this->getConfiguration($countryCode,'delimiter');
     }
 
+    /**
+     * @param string $priceString
+     * @param string $countryCode
+     * @return float
+     */
     private function parsePrice($priceString, $countryCode)
     {
         $priceString = str_replace($this->getCurrencyUnits(), '', trim($priceString));
