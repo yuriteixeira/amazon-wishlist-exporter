@@ -100,7 +100,7 @@ RESPONSE;
 
     public function testExecuteWithInvalidArguments()
     {
-        $this->setExpectedException('\\InvalidArgumentException');
+       $this->setExpectedException('\\InvalidArgumentException');
         $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock);
         $crawler->crawl('ABC123', 'XX');
 
@@ -190,9 +190,9 @@ RESPONSE;
 
 
         $expectedResult = [
-            ['Product 1', 1.99, 'http://www.amazon.com/product-1', 'test://product-1.png'],
-            ['Product 2', 2.99, 'http://www.amazon.com/product-2', 'test://product-2.png'],
-            ['Product 3', 3.99, 'http://www.amazon.com/product-3', 'test://product-3.png'],
+            ['name' => 'Product 1', 'price' => 1.99, 'url' => 'http://www.amazon.com/product-1', 'image' => 'test://product-1.png'],
+            ['name' => 'Product 2', 'price' => 2.99, 'url' => 'http://www.amazon.com/product-2', 'image' => 'test://product-2.png'],
+            ['name' => 'Product 3', 'price' => 3.99, 'url' => 'http://www.amazon.com/product-3', 'image' => 'test://product-3.png'],
         ];
 
         $this->assertEquals($expectedResult, $rows);
@@ -226,9 +226,9 @@ RESPONSE;
         $result = $crawler->crawl('ABC123', 'UK');
 
         $expectedResult = [
-            ['Product 1', 1.99, 'http://www.amazon.co.uk/product-1', 'test://product-1.png'],
-            ['Product 2', 2.99, 'http://www.amazon.co.uk/product-2', 'test://product-2.png'],
-            ['Product 3', 3.99, 'http://www.amazon.co.uk/product-3', 'test://product-3.png'],
+            ['name' => 'Product 1', 'price' => 1.99, 'url' => 'http://www.amazon.co.uk/product-1', 'image' => 'test://product-1.png'],
+            ['name' => 'Product 2', 'price' => 2.99, 'url' => 'http://www.amazon.co.uk/product-2', 'image' => 'test://product-2.png'],
+            ['name' => 'Product 3', 'price' => 3.99, 'url' => 'http://www.amazon.co.uk/product-3', 'image' => 'test://product-3.png'],
         ];
 
         $this->assertEquals($expectedResult, $result);
@@ -265,15 +265,15 @@ RESPONSE;
         $result = $crawler->crawl('ABC123', 'US');
 
         $expectedResult = [
-            ['Product 1', 1.99, 'http://www.amazon.com/product-1', 'test://product-1.png'],
-            ['Product 2', 2.99, 'http://www.amazon.com/product-2', 'test://product-2.png'],
-            ['Product 3', 3.99, 'http://www.amazon.com/product-3', 'test://product-3.png'],
-            ['Product 4', 4.99, 'http://www.amazon.com/product-4', 'test://product-4.png'],
-            ['Product 5', 5.99, 'http://www.amazon.com/product-5', 'test://product-5.png'],
-            ['Product 6', 6.99, 'http://www.amazon.com/product-6', 'test://product-6.png'],
-            ['Product 7', 7.99, 'http://www.amazon.com/product-7', 'test://product-7.png'],
-            ['Product 8', 8.99, 'http://www.amazon.com/product-8', 'test://product-8.png'],
-            ['Product 9', 9.99, 'http://www.amazon.com/product-9', 'test://product-9.png'],
+            ['name' => 'Product 1', 'price' => 1.99, 'url' => 'http://www.amazon.com/product-1', 'image' => 'test://product-1.png'],
+            ['name' => 'Product 2', 'price' => 2.99, 'url' => 'http://www.amazon.com/product-2', 'image' => 'test://product-2.png'],
+            ['name' => 'Product 3', 'price' => 3.99, 'url' => 'http://www.amazon.com/product-3', 'image' => 'test://product-3.png'],
+            ['name' => 'Product 4', 'price' => 4.99, 'url' => 'http://www.amazon.com/product-4', 'image' => 'test://product-4.png'],
+            ['name' => 'Product 5', 'price' => 5.99, 'url' => 'http://www.amazon.com/product-5', 'image' => 'test://product-5.png'],
+            ['name' => 'Product 6', 'price' => 6.99, 'url' => 'http://www.amazon.com/product-6', 'image' => 'test://product-6.png'],
+            ['name' => 'Product 7', 'price' => 7.99, 'url' => 'http://www.amazon.com/product-7', 'image' => 'test://product-7.png'],
+            ['name' => 'Product 8', 'price' => 8.99, 'url' => 'http://www.amazon.com/product-8', 'image' => 'test://product-8.png'],
+            ['name' => 'Product 9', 'price' => 9.99, 'url' => 'http://www.amazon.com/product-9', 'image' => 'test://product-9.png'],
         ];
 
         $this->assertEquals($expectedResult, $result);
@@ -311,15 +311,15 @@ RESPONSE;
         $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock);
         $result = $crawler->crawl('ABC123', 'UK');
         $expectedResult = [
-            ['Product 1', 1.99, 'http://www.amazon.co.uk/product-1', 'test://product-1.png'],
-            ['Product 2', 2.99, 'http://www.amazon.co.uk/product-2', 'test://product-2.png'],
-            ['Product 3', 3.99, 'http://www.amazon.co.uk/product-3', 'test://product-3.png'],
-            ['Product 4', 4.99, 'http://www.amazon.co.uk/product-4', 'test://product-4.png'],
-            ['Product 5', 5.99, 'http://www.amazon.co.uk/product-5', 'test://product-5.png'],
-            ['Product 6', 6.99, 'http://www.amazon.co.uk/product-6', 'test://product-6.png'],
-            ['Product 7', 7.99, 'http://www.amazon.co.uk/product-7', 'test://product-7.png'],
-            ['Product 8', 8.99, 'http://www.amazon.co.uk/product-8', 'test://product-8.png'],
-            ['Product 9', 9.99, 'http://www.amazon.co.uk/product-9', 'test://product-9.png'],
+            ['name' => 'Product 1', 'price' => 1.99, 'url' => 'http://www.amazon.co.uk/product-1', 'image' => 'test://product-1.png'],
+            ['name' => 'Product 2', 'price' => 2.99, 'url' => 'http://www.amazon.co.uk/product-2', 'image' => 'test://product-2.png'],
+            ['name' => 'Product 3', 'price' => 3.99, 'url' => 'http://www.amazon.co.uk/product-3', 'image' => 'test://product-3.png'],
+            ['name' => 'Product 4', 'price' => 4.99, 'url' => 'http://www.amazon.co.uk/product-4', 'image' => 'test://product-4.png'],
+            ['name' => 'Product 5', 'price' => 5.99, 'url' => 'http://www.amazon.co.uk/product-5', 'image' => 'test://product-5.png'],
+            ['name' => 'Product 6', 'price' => 6.99, 'url' => 'http://www.amazon.co.uk/product-6', 'image' => 'test://product-6.png'],
+            ['name' => 'Product 7', 'price' => 7.99, 'url' => 'http://www.amazon.co.uk/product-7', 'image' => 'test://product-7.png'],
+            ['name' => 'Product 8', 'price' => 8.99, 'url' => 'http://www.amazon.co.uk/product-8', 'image' => 'test://product-8.png'],
+            ['name' => 'Product 9', 'price' => 9.99, 'url' => 'http://www.amazon.co.uk/product-9', 'image' => 'test://product-9.png'],
         ];
 
         $this->assertEquals($expectedResult, $result);

@@ -14,6 +14,40 @@ class AmazonCrawler
 {
 
     /**
+     * @var array
+     */
+    private $configuration = array(
+        'US' => array(
+            'url' =>'http://www.amazon.com',
+            'delimiter' => '.',
+            'currencySign' => '$',
+        ),
+        'DE' => array(
+            'url' =>'http://www.amazon.de',
+            'delimiter' => ',',
+            'currencySign' => 'EUR',
+        ),
+        'UK' => array(
+            'url' =>'http://www.amazon.co.uk',
+            'delimiter' => ',',
+            'currencySign' => '£',
+        ),
+    );
+
+
+    /**
+     * @return array
+     */
+    private function getCurrencyUnits()
+    {
+        $units = array();
+        foreach($this->configuration as $element) {
+            $units[] = $element ['currencySign'];
+        }
+        return $units;
+    }
+
+    /**
      * @var \AmazonWishlistExporter\Logger\LoggerInterface
      */
     private $logger;
@@ -32,29 +66,43 @@ class AmazonCrawler
     }
 
     /**
+     * @return array
+     */
+    public function getConfiguration($countryCode, $value)
+    {
+        $countryCode = strtoupper($countryCode);
+        if (false === array_key_exists($countryCode, $this->configuration)) {
+            throw new \InvalidArgumentException(sprintf('Country Code %s not found!', $countryCode));
+        }
+        if (false === array_key_exists($value, $this->configuration[$countryCode])) {
+            throw new \InvalidArgumentException(sprintf('Value Code %s not found!', $value));
+        }
+        return $this->configuration[$countryCode][$value];
+    }
+    /**
      * @param $countryCode
      * @return string|null
      */
     private function getBaseUrlForCountry($countryCode)
     {
-        $countryCode = strtoupper($countryCode);
-        $baseUrlsByCountry = [
-            'US' => 'http://www.amazon.com',
-            'DE' => 'http://www.amazon.de',
-            'UK' => 'http://www.amazon.co.uk',
-        ];
-
-        $baseUrl = !empty($baseUrlsByCountry[$countryCode]) ? $baseUrlsByCountry[$countryCode] : null;
-
-        return $baseUrl;
+        return $this->getConfiguration($countryCode, 'url');
     }
 
-    private function getCurrencyUnits(){
-        return array(
-            'USD' => '$',
-            'EUR' => 'EUR'
+    /**
+     * @param $countryCode
+     * @return mixed
+     * @throws \Exception
+     */
+    private function getPriceDelimiterByCountryCode($countryCode)
+    {
+        return $this->getConfiguration($countryCode,'delimiter');
+    }
 
-        );
+    private function parsePrice($priceString, $countryCode)
+    {
+        $priceString = str_replace($this->getCurrencyUnits(), '', trim($priceString));
+        $priceString = trim(str_replace($this->getPriceDelimiterByCountryCode($countryCode), '.', $priceString));
+        return (float)$priceString;
     }
 
     public function crawl($wishlistId, $countryCode)
@@ -88,17 +136,23 @@ class AmazonCrawler
                 break;
             }
 
-            $items->each(function (Crawler $item) use (&$rows, $baseUrl) {
+            $items->each(function (Crawler $item) use (&$rows, $baseUrl, $countryCode) {
                 $name = trim($item->filter('[id^=itemName_]')->text());
-                $price = str_replace($this->getCurrencyUnits(), '', trim($item->filter('[id^=itemPrice_]')->text()));
 
+                $price = $this->parsePrice($item->filter('[id^=itemPrice_]')->text(), $countryCode);
+                //$price = str_replace($this->getCurrencyUnits(), '', trim($item->filter('[id^=itemPrice_]')->text()));
                 $url =
                     $item->filter('[id^=itemName_]')->attr('href') ?
                         $baseUrl . $item->filter('[id^=itemName_]')->attr('href') :
                         $item->filter('[id^=itemInfo_] .a-link-normal')->attr('href');
 
                 $image = trim($item->filter('[id^=itemImage_] img')->attr('src'));
-                $rows[] = array($name, $price, $url, $image);
+                $rows[] = array(
+                    'name' => $name,
+                    'price' => $price,
+                    'url' => $url,
+                    'image' => $image
+                );
             });
 
             $this->logger->log("Parsed page {$page} - Url: {$url}");
