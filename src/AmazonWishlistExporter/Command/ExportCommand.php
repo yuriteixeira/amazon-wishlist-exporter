@@ -101,8 +101,10 @@ class ExportCommand implements CommandInterface
      */
     private function getBaseUrlForCountry($countryCode)
     {
+        $countryCode = strtoupper($countryCode);
         $baseUrlsByCountry = [
             'US' => 'http://www.amazon.com',
+            'DE' => 'http://www.amazon.de',
             'UK' => 'http://www.amazon.co.uk',
         ];
 
