@@ -34,6 +34,13 @@ class ExportCommand implements CommandInterface
      */
     private $pathToSave;
 
+    /**
+     * @param $countryCode
+     * @param $wishlistId
+     * @param ClientInterface $client
+     * @param LoggerInterface $logger
+     * @param $pathToSave
+     */
     public function __construct(
         $countryCode,
         $wishlistId,
@@ -55,8 +62,8 @@ class ExportCommand implements CommandInterface
      */
     public function execute()
     {
-        $amazonCrawler = new AmazonCrawler($this->client,$this->logger);
-        $items = $amazonCrawler->crawl($this->whishlistId, $this->countryCode);
+        $amazonCrawler = new AmazonCrawler($this->client,$this->logger, $this->whishlistId, $this->countryCode);
+        $items = $amazonCrawler->crawlItems();
 
         $items = array_merge([['Name', 'Price', 'Url','Image']], $items);
 

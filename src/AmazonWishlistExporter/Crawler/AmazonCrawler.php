@@ -18,17 +18,17 @@ class AmazonCrawler
      */
     private $configuration = array(
         'US' => array(
-            'url' =>'http://www.amazon.com',
+            'url' => 'http://www.amazon.com',
             'delimiter' => '.',
             'currencySign' => '$',
         ),
         'DE' => array(
-            'url' =>'http://www.amazon.de',
+            'url' => 'http://www.amazon.de',
             'delimiter' => ',',
             'currencySign' => 'EUR',
         ),
         'UK' => array(
-            'url' =>'http://www.amazon.co.uk',
+            'url' => 'http://www.amazon.co.uk',
             'delimiter' => ',',
             'currencySign' => '£',
         ),
@@ -41,7 +41,7 @@ class AmazonCrawler
     private function getCurrencyUnits()
     {
         $units = array();
-        foreach($this->configuration as $element) {
+        foreach ($this->configuration as $element) {
             $units[] = $element ['currencySign'];
         }
         return $units;
@@ -58,13 +58,26 @@ class AmazonCrawler
     private $client;
 
     /**
+     * @var integer
+     */
+    private $wishlistId;
+
+    /**
+     * @var string
+     */
+    private $countryCode;
+
+    /**
      * @param ClientInterface $client
      * @param LoggerInterface $logger
+     * @param $wishlistId
      */
-    public function __construct(ClientInterface $client, LoggerInterface $logger)
+    public function __construct(ClientInterface $client, LoggerInterface $logger, $wishlistId, $countryCode)
     {
-        $this->logger = $logger;
         $this->client = $client;
+        $this->logger = $logger;
+        $this->wishlistId = $wishlistId;
+        $this->countryCode = $countryCode;
 
     }
 
@@ -82,13 +95,19 @@ class AmazonCrawler
         }
         return $this->configuration[$countryCode][$value];
     }
+
     /**
      * @param $countryCode
      * @return string|null
      */
     private function getBaseUrlForCountry($countryCode)
     {
-        return $this->getConfiguration($countryCode, 'url');
+        $baseUrl = $this->getConfiguration($countryCode, 'url');
+
+        if (!$baseUrl) {
+            throw new \InvalidArgumentException("Country code {$this->countryCode} is not supported.");
+        }
+        return $baseUrl;
     }
 
     /**
@@ -98,7 +117,7 @@ class AmazonCrawler
      */
     private function getPriceDelimiterByCountryCode($countryCode)
     {
-        return $this->getConfiguration($countryCode,'delimiter');
+        return $this->getConfiguration($countryCode, 'delimiter');
     }
 
     /**
@@ -113,17 +132,46 @@ class AmazonCrawler
         return (float)$priceString;
     }
 
-    public function crawl($wishlistId, $countryCode)
+    /**
+     * @param $wishlistBaseUrl
+     * @return string
+     */
+    public function crawlTitle()
+    {
+        $response = $this->client->get($this->getWishlistBaseUrl());
+        $responseContent = (string)$response->getBody();
+        $crawler = new Crawler($responseContent);
+        return trim($crawler->filter('span.a-size-extra-large')->text());
+    }
+
+    /**
+     * @return string
+     */
+    public function crawlOwnerName(){
+        $response = $this->client->get($this->getWishlistBaseUrl());
+        $responseContent = (string)$response->getBody();
+        $crawler = new Crawler($responseContent);
+        return trim($crawler->filter('span.g-profile-name')->text());
+    }
+    /**
+     * @return string
+     */
+    protected function getWishlistBaseUrl()
+    {
+        return "{$this->getBaseUrlForCountry($this->countryCode)}/registry/wishlist/{$this->wishlistId}?layout=standard";
+    }
+
+    /**
+     * @return array
+     */
+    public function crawlItems()
     {
         $page = 1;
         $lastItemsContent = null;
         $rows = [];
-        $baseUrl = $this->getBaseUrlForCountry($countryCode);
-        $wishlistBaseUrl = "{$baseUrl}/registry/wishlist/{$wishlistId}?layout=standard";
+        $baseUrl = $this->getBaseUrlForCountry($this->countryCode);
+        $wishlistBaseUrl = $this->getWishlistBaseUrl();
 
-        if (!$baseUrl) {
-            throw new \InvalidArgumentException("Country code {$countryCode} is not supported.");
-        }
 
         $this->logger->log("Exporting: {$wishlistBaseUrl}");
 
@@ -144,11 +192,9 @@ class AmazonCrawler
                 break;
             }
 
-            $items->each(function (Crawler $item) use (&$rows, $baseUrl, $countryCode) {
+            $items->each(function (Crawler $item) use (&$rows, $baseUrl) {
                 $name = trim($item->filter('[id^=itemName_]')->text());
-
-                $price = $this->parsePrice($item->filter('[id^=itemPrice_]')->text(), $countryCode);
-                //$price = str_replace($this->getCurrencyUnits(), '', trim($item->filter('[id^=itemPrice_]')->text()));
+                $price = $this->parsePrice($item->filter('[id^=itemPrice_]')->text(), $this->countryCode);
                 $url =
                     $item->filter('[id^=itemName_]')->attr('href') ?
                         $baseUrl . $item->filter('[id^=itemName_]')->attr('href') :

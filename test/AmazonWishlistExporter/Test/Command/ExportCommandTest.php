@@ -38,6 +38,13 @@ class ExportCommandTest extends \PHPUnit_Framework_TestCase
         $this->loggerMock = $this->getMock('\\AmazonWishlistExporter\\Logger\\LoggerInterface');
 
         $this->responseContentPage1Fixture = <<<RESPONSE
+        <span class="profile-layout-aid-top">
+    <span class="a-size-extra-large stable clip-text">
+      <span>
+        Wishlist Title
+      </span>
+    </span>
+</span>
 <div id="item_1">
     <a id="itemName_1" href="/product-1">Product 1</a>
     <div id="itemPrice_1">$ 1.99</div>
@@ -56,6 +63,13 @@ class ExportCommandTest extends \PHPUnit_Framework_TestCase
 RESPONSE;
 
         $this->responseContentPage2Fixture = <<<RESPONSE
+        <span class="profile-layout-aid-top">
+    <span class="a-size-extra-large stable clip-text">
+      <span>
+        Wishlist Title
+      </span>
+    </span>
+</span>
 <div id="item_4">
     <a id="itemName_4" href="/product-4">Product 4</a>
     <div id="itemPrice_4">$ 4.99</div>
@@ -98,11 +112,18 @@ RESPONSE;
 RESPONSE;
     }
 
+    public function testFetchTitle()
+    {
+        $this->setExpectedException('\\InvalidArgumentException');
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock, 'ABC123', 'XX');
+        $this->assertEquals('Wishlist Title', $crawler->crawlTitle());
+    }
+
     public function testExecuteWithInvalidArguments()
     {
-       $this->setExpectedException('\\InvalidArgumentException');
-        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock);
-        $crawler->crawl('ABC123', 'XX');
+        $this->setExpectedException('\\InvalidArgumentException');
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock, 'ABC123', 'XX');
+        $crawler->crawlItems();
 
     }
 
@@ -125,8 +146,8 @@ RESPONSE;
             ->method('log')
             ->withAnyParameters();
 
-        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock);
-        $rows = $crawler->crawl('ABC123', 'US');
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock, 'ABC123', 'DE');
+        $rows = $crawler->crawlItems();
 
         $this->assertEmpty($rows);
     }
@@ -155,8 +176,8 @@ RESPONSE;
             ->method('log')
             ->withAnyParameters();
 
-        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock);
-        $rows = $crawler->crawl('ABC123', 'US');
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock, 'ABC123', 'UK');
+        $rows = $crawler->crawlItems();
 
         $this->assertEmpty($rows);
     }
@@ -185,8 +206,8 @@ RESPONSE;
             ->withAnyParameters();
 
 
-        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock);
-        $rows = $crawler->crawl('ABC123', 'US');
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock, 'ABC123', 'US');
+        $rows = $crawler->crawlItems();
 
 
         $expectedResult = [
@@ -222,8 +243,8 @@ RESPONSE;
             ->withAnyParameters();
 
 
-        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock);
-        $result = $crawler->crawl('ABC123', 'UK');
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock, 'ABC123', 'UK');
+        $result = $crawler->crawlItems();
 
         $expectedResult = [
             ['name' => 'Product 1', 'price' => 1.99, 'url' => 'http://www.amazon.co.uk/product-1', 'image' => 'test://product-1.png'],
@@ -261,8 +282,8 @@ RESPONSE;
             ->expects($this->exactly(6))
             ->method('log')
             ->withAnyParameters();
-        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock);
-        $result = $crawler->crawl('ABC123', 'US');
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock, 'ABC123', 'US');
+        $result = $crawler->crawlItems();
 
         $expectedResult = [
             ['name' => 'Product 1', 'price' => 1.99, 'url' => 'http://www.amazon.com/product-1', 'image' => 'test://product-1.png'],
@@ -308,8 +329,8 @@ RESPONSE;
             ->withAnyParameters();
 
 
-        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock);
-        $result = $crawler->crawl('ABC123', 'UK');
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock, 'ABC123', 'UK');
+        $result = $crawler->crawlItems();
         $expectedResult = [
             ['name' => 'Product 1', 'price' => 1.99, 'url' => 'http://www.amazon.co.uk/product-1', 'image' => 'test://product-1.png'],
             ['name' => 'Product 2', 'price' => 2.99, 'url' => 'http://www.amazon.co.uk/product-2', 'image' => 'test://product-2.png'],

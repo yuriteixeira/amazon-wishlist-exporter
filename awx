@@ -25,7 +25,6 @@ if (!defined('COMPOSER_AUTOLOADER')) {
 require COMPOSER_AUTOLOADER;
 
 $logger = new \AmazonWishlistExporter\Logger\StandardOutputLogger();
-#$logger = new  \AmazonWishlistExporter\Logger\NullLogger();
 $client = new \GuzzleHttp\Client();
 $wishlistId = $argv[1];
 $countryCode = $argv[2];
