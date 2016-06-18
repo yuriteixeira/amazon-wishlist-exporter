@@ -2,10 +2,9 @@
 
 namespace AmazonWishlistExporter\Command;
 
-use AmazonWishlistExporter\Logger\LoggerInterface;
 use AmazonWishlistExporter\Crawler\AmazonCrawler;
-use GuzzleHttp\ClientInterface;
-use Symfony\Component\DomCrawler\Crawler;
+use GuzzleHttp\Client;
+use Psr\Log\LoggerInterface;
 
 class ExportCommand implements CommandInterface
 {
@@ -17,15 +16,15 @@ class ExportCommand implements CommandInterface
 	/**
 	 * @var string
 	 */
-	private $whishlistId;
+	private $wishlistId;
 
 	/**
-	 * @var \GuzzleHttp\ClientInterface
+	 * @var \GuzzleHttp\Client
 	 */
 	private $client;
 
 	/**
-	 * @var \AmazonWishlistExporter\Logger\LoggerInterface
+	 * @var LoggerInterface
 	 */
 	private $logger;
 
@@ -35,22 +34,23 @@ class ExportCommand implements CommandInterface
 	private $pathToSave;
 
 	/**
+	 * ExportCommand constructor.
 	 * @param $countryCode
 	 * @param $wishlistId
-	 * @param ClientInterface $client
+	 * @param Client $client
 	 * @param LoggerInterface $logger
 	 * @param $pathToSave
 	 */
 	public function __construct(
 		$countryCode,
 		$wishlistId,
-		ClientInterface $client,
+		Client $client,
 		LoggerInterface $logger,
 		$pathToSave
 	)
 	{
 		$this->countryCode = $countryCode;
-		$this->whishlistId = $wishlistId;
+		$this->wishlistId = $wishlistId;
 		$this->client = $client;
 		$this->logger = $logger;
 		$this->pathToSave = $pathToSave;
@@ -62,7 +62,7 @@ class ExportCommand implements CommandInterface
 	 */
 	public function execute()
 	{
-		$amazonCrawler = new AmazonCrawler($this->client, $this->logger, $this->whishlistId, $this->countryCode);
+		$amazonCrawler = new AmazonCrawler($this->client, $this->logger, $this->wishlistId, $this->countryCode);
 		$items = $amazonCrawler->crawlItems();
 
 		$items = array_merge([['Name', 'Price', 'Url', 'Image']], $items);

@@ -1,15 +1,11 @@
 <?php
 namespace AmazonWishlistExporter\Crawler;
 
-use AmazonWishlistExporter\Logger\LoggerInterface;
-use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Client;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\DomCrawler\Crawler;
 
-/**
- * User: ms
- * Date: 11.10.15
- * Time: 19:31
- */
+
 class AmazonCrawler
 {
 
@@ -48,12 +44,12 @@ class AmazonCrawler
 	}
 
 	/**
-	 * @var \AmazonWishlistExporter\Logger\LoggerInterface
+	 * @var LoggerInterface
 	 */
 	private $logger;
 
 	/**
-	 * @var \GuzzleHttp\ClientInterface
+	 * @var \GuzzleHttp\Client
 	 */
 	private $client;
 
@@ -68,11 +64,13 @@ class AmazonCrawler
 	private $countryCode;
 
 	/**
-	 * @param ClientInterface $client
+	 * AmazonCrawler constructor.
+	 * @param Client $client
 	 * @param LoggerInterface $logger
 	 * @param $wishlistId
+	 * @param $countryCode
 	 */
-	public function __construct(ClientInterface $client, LoggerInterface $logger, $wishlistId, $countryCode)
+	public function __construct(Client $client, LoggerInterface $logger, $wishlistId, $countryCode)
 	{
 		$this->client = $client;
 		$this->logger = $logger;
@@ -82,7 +80,9 @@ class AmazonCrawler
 	}
 
 	/**
-	 * @return array
+	 * @param $countryCode
+	 * @param $value
+	 * @return mixed
 	 */
 	public function getConfiguration($countryCode, $value)
 	{
@@ -133,7 +133,6 @@ class AmazonCrawler
 	}
 
 	/**
-	 * @param $wishlistBaseUrl
 	 * @return string
 	 */
 	public function crawlTitle()
@@ -175,8 +174,7 @@ class AmazonCrawler
 		$wishlistBaseUrl = $this->getWishlistBaseUrl();
 
 
-		$this->logger->log("Exporting: {$wishlistBaseUrl}");
-
+		$this->logger->info("Exporting: {$wishlistBaseUrl}");
 		while (true) {
 			$url = "{$wishlistBaseUrl}&page={$page}";
 			$response = $this->client->get($url);
@@ -184,13 +182,14 @@ class AmazonCrawler
 			$crawler = new Crawler($responseContent);
 			$items = $crawler->filter('[id^=item_]');
 
+
 			if ($response->getStatusCode() != 200 || !$items->count()) {
-				$this->logger->log('Empty content (are you sure that you set your list as public?)');
+				$this->logger->info('Empty content (are you sure that you set your list as public?)');
 				break;
 			}
 
 			if ($items->text() == $lastItemsContent) {
-				$this->logger->log('Current content is repeating last content');
+				$this->logger->info('Current content is repeating last content');
 				break;
 			}
 
@@ -211,13 +210,13 @@ class AmazonCrawler
 				);
 			});
 
-			$this->logger->log("Parsed page {$page} - Url: {$url}");
+			$this->logger->info("Parsed page {$page} - Url: {$url}");
 
 			$lastItemsContent = $items->text();
 			++$page;
 		}
 
-		$this->logger->log("Finished");
+		$this->logger->info("Finished");
 
 		return $rows;
 	}

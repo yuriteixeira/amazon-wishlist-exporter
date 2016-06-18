@@ -35,7 +35,7 @@ class ExportCommandTest extends \PHPUnit_Framework_TestCase
     protected function setUp()
     {
         $this->clientMock = $this->getMock('\\GuzzleHttp\\ClientInterface');
-        $this->loggerMock = $this->getMock('\\AmazonWishlistExporter\\Logger\\LoggerInterface');
+        $this->loggerMock = $this->getMock('\\Psr\Log\LoggerInterface');
 
         $this->responseContentPage1Fixture = <<<RESPONSE
         <span class="profile-layout-aid-top">
@@ -143,7 +143,7 @@ RESPONSE;
         // TODO: Check how to check multiple calls with different parameters
         $this->loggerMock
             ->expects($this->exactly(3))
-            ->method('log')
+            ->method('info')
             ->withAnyParameters();
 
         $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock, 'ABC123', 'DE');

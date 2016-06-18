@@ -25,17 +25,16 @@ if (!defined('COMPOSER_AUTOLOADER')) {
 require COMPOSER_AUTOLOADER;
 
 
-$monoLogger = new \Monolog\Logger('StandardOutput');
+$logger = new \Monolog\Logger('StandardOutput');
 $handler = new \Monolog\Handler\StreamHandler('php://stdout', \Monolog\Logger::DEBUG);
 $handler->setFormatter(new \Monolog\Formatter\LineFormatter("%message%\n"));
-$monoLogger->pushHandler($handler);
+$logger->pushHandler($handler);
 
 
-$logger = new \AmazonWishlistExporter\Logger\StandardOutputLogger();
 $client = new \GuzzleHttp\Client();
 $wishlistId = $argv[1];
 $countryCode = $argv[2];
 $pathToSave = $argv[3];
 
-$command = new \AmazonWishlistExporter\Command\ExportCommand($countryCode, $wishlistId, $client, $monoLogger, $pathToSave);
-$items = $command->execute();
+$command = new \AmazonWishlistExporter\Command\ExportCommand($countryCode, $wishlistId, $client, $logger, $pathToSave);
+$command->execute();
