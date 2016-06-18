@@ -4,5 +4,5 @@ namespace AmazonWishlistExporter\Command;
 
 interface CommandInterface
 {
-    public function execute();
+	public function execute();
 }
