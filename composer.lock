@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "ab7b1dc4a421cb4f160edb86d367be86",
-    "content-hash": "d312426ad6e41cb1a4515732f46b5332",
+    "hash": "e56e82830c00c967628819b080d9f48c",
+    "content-hash": "a067e7be1c17d52719daabd051d221eb",
     "packages": [
         {
             "name": "guzzlehttp/guzzle",
@@ -393,6 +393,46 @@
                 "psr-3"
             ],
             "time": "2012-12-21 11:40:51"
+        },
+        {
+            "name": "schmiddim/amazon-asin-fetcher",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/schmiddim/amazon-asin-parser.git",
+                "reference": "7acb2ac814cb21df18f6795d1f850b27a4b0706c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/schmiddim/amazon-asin-parser/zipball/7acb2ac814cb21df18f6795d1f850b27a4b0706c",
+                "reference": "7acb2ac814cb21df18f6795d1f850b27a4b0706c",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "4.8.6"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "Amazon\\": "./src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-3.0"
+            ],
+            "authors": [
+                {
+                    "name": "Michael Schmitt",
+                    "email": "schmiddim@gmx.at"
+                }
+            ],
+            "description": "Parse ASINS from urls",
+            "homepage": "http://www.radikalblogger.de",
+            "time": "2016-06-18 17:51:21"
         },
         {
             "name": "symfony/css-selector",
@@ -981,7 +1021,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "schmiddim/amazon-asin-fetcher": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": [],

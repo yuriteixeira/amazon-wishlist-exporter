@@ -1,6 +1,7 @@
 <?php
 namespace AmazonWishlistExporter\Crawler;
 
+use Amazon\AsinParser;
 use GuzzleHttp\Client;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DomCrawler\Crawler;
@@ -201,11 +202,16 @@ class AmazonCrawler
 						$item->filter('[id^=itemInfo_] .a-link-normal')->attr('href');
 
 				$image = trim($item->filter('[id^=itemImage_] img')->attr('src'));
+
+				$fetcher = new AsinParser($url);
+
 				$rows[] = array(
 					'name' => $name,
 					'price' => $price,
 					'url' => $url,
-					'image' => $image
+					'image' => $image,
+					'asin' => $fetcher->getAsin(),
+					'tld' => $fetcher->getTld()
 				);
 			});
 

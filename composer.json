@@ -24,7 +24,9 @@
     "symfony/dom-crawler": "*",
     "symfony/css-selector": "*",
     "monolog/monolog": "^1.19",
-    "php-console/php-console": "~3.0"
+    "php-console/php-console": "~3.0",
+    "schmiddim/amazon-asin-fetcher" :"dev-master"
+
 
   },
   "require-dev": {
