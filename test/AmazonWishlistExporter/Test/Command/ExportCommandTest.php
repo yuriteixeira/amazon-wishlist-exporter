@@ -3,6 +3,7 @@
 namespace AmazonWishlistExporter\Test\Command;
 
 use AmazonWishlistExporter\Command\ExportCommand;
+use AmazonWishlistExporter\Crawler\AmazonCrawler;
 
 class ExportCommandTest extends \PHPUnit_Framework_TestCase
 {
@@ -34,9 +35,16 @@ class ExportCommandTest extends \PHPUnit_Framework_TestCase
     protected function setUp()
     {
         $this->clientMock = $this->getMock('\\GuzzleHttp\\ClientInterface');
-        $this->loggerMock = $this->getMock('\\AmazonWishlistExporter\\Logger\\LoggerInterface');
+        $this->loggerMock = $this->getMock('\\Psr\Log\LoggerInterface');
 
         $this->responseContentPage1Fixture = <<<RESPONSE
+        <span class="profile-layout-aid-top">
+    <span class="a-size-extra-large stable clip-text">
+      <span>
+        Wishlist Title
+      </span>
+    </span>
+</span>
 <div id="item_1">
     <a id="itemName_1" href="/product-1">Product 1</a>
     <div id="itemPrice_1">$ 1.99</div>
@@ -55,6 +63,13 @@ class ExportCommandTest extends \PHPUnit_Framework_TestCase
 RESPONSE;
 
         $this->responseContentPage2Fixture = <<<RESPONSE
+        <span class="profile-layout-aid-top">
+    <span class="a-size-extra-large stable clip-text">
+      <span>
+        Wishlist Title
+      </span>
+    </span>
+</span>
 <div id="item_4">
     <a id="itemName_4" href="/product-4">Product 4</a>
     <div id="itemPrice_4">$ 4.99</div>
@@ -97,12 +112,20 @@ RESPONSE;
 RESPONSE;
     }
 
+    public function testFetchTitle()
+    {
+        $this->setExpectedException('\\InvalidArgumentException');
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock, 'ABC123', 'XX');
+        $this->assertEquals('Wishlist Title', $crawler->crawlTitle());
+    }
+
     public function testExecuteWithInvalidArguments()
     {
         $this->setExpectedException('\\InvalidArgumentException');
-        $command = new ExportCommand('XX', 'ABC123', $this->clientMock, $this->loggerMock);
-        $command->execute();
-    }  
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock, 'ABC123', 'XX');
+        $crawler->crawlItems();
+
+    }
 
     public function testExecuteWithInvalidWishlistId()
     {
@@ -110,24 +133,22 @@ RESPONSE;
         $responseMock
             ->expects($this->once())
             ->method('getStatusCode')
-            ->will($this->returnValue(404))
-        ;
+            ->will($this->returnValue(404));
 
         $this->clientMock
             ->expects($this->once())
             ->method('get')
-            ->will($this->returnValue($responseMock))
-        ;
+            ->will($this->returnValue($responseMock));
 
         // TODO: Check how to check multiple calls with different parameters
         $this->loggerMock
             ->expects($this->exactly(3))
-            ->method('log')
-            ->withAnyParameters()
-        ;
+            ->method('info')
+            ->withAnyParameters();
 
-        $command = new ExportCommand('US', 'ABC123', $this->clientMock, $this->loggerMock);
-        $rows = $command->execute();
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock, 'ABC123', 'DE');
+        $rows = $crawler->crawlItems();
+
         $this->assertEmpty($rows);
     }
 
@@ -137,30 +158,27 @@ RESPONSE;
         $responseMock
             ->expects($this->once())
             ->method('getStatusCode')
-            ->will($this->returnValue(200))
-        ;
+            ->will($this->returnValue(200));
 
         $responseMock
             ->expects($this->exactly(1))
             ->method('getBody')
-            ->will($this->returnValue($this->unexpectedResponse))
-        ;
+            ->will($this->returnValue($this->unexpectedResponse));
 
         $this->clientMock
             ->expects($this->once())
             ->method('get')
-            ->will($this->returnValue($responseMock))
-        ;
+            ->will($this->returnValue($responseMock));
 
         // TODO: Check how to check multiple calls with different parameters
         $this->loggerMock
             ->expects($this->exactly(3))
             ->method('log')
-            ->withAnyParameters()
-        ;
+            ->withAnyParameters();
 
-        $command = new ExportCommand('US', 'ABC123', $this->clientMock, $this->loggerMock);
-        $rows = $command->execute();
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock, 'ABC123', 'UK');
+        $rows = $crawler->crawlItems();
+
         $this->assertEmpty($rows);
     }
 
@@ -170,37 +188,35 @@ RESPONSE;
         $responseMock
             ->expects($this->exactly(2))
             ->method('getStatusCode')
-            ->will($this->returnValue(200))
-        ;
+            ->will($this->returnValue(200));
 
         $responseMock
             ->expects($this->exactly(2))
             ->method('getBody')
-            ->will($this->returnValue($this->responseContentPage1Fixture))
-        ;
+            ->will($this->returnValue($this->responseContentPage1Fixture));
 
         $this->clientMock
             ->expects($this->exactly(2))
             ->method('get')
-            ->will($this->returnValue($responseMock))
-        ;
+            ->will($this->returnValue($responseMock));
 
         $this->loggerMock
             ->expects($this->exactly(4))
             ->method('log')
-            ->withAnyParameters()
-        ;
+            ->withAnyParameters();
 
-        $command = new ExportCommand('US', 'ABC123', $this->clientMock, $this->loggerMock);
-        $result = $command->execute();
+
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock, 'ABC123', 'US');
+        $rows = $crawler->crawlItems();
+
 
         $expectedResult = [
-            ['Product 1', 1.99, 'http://www.amazon.com/product-1', 'test://product-1.png'],
-            ['Product 2', 2.99, 'http://www.amazon.com/product-2', 'test://product-2.png'],
-            ['Product 3', 3.99, 'http://www.amazon.com/product-3', 'test://product-3.png'],
+            ['name' => 'Product 1', 'price' => 1.99, 'url' => 'http://www.amazon.com/product-1', 'image' => 'test://product-1.png'],
+            ['name' => 'Product 2', 'price' => 2.99, 'url' => 'http://www.amazon.com/product-2', 'image' => 'test://product-2.png'],
+            ['name' => 'Product 3', 'price' => 3.99, 'url' => 'http://www.amazon.com/product-3', 'image' => 'test://product-3.png'],
         ];
 
-        $this->assertEquals($expectedResult, $result);
+        $this->assertEquals($expectedResult, $rows);
     }
 
     public function testExecuteOnUkWithSinglePageOfItems()
@@ -209,34 +225,31 @@ RESPONSE;
         $responseMock
             ->expects($this->exactly(2))
             ->method('getStatusCode')
-            ->will($this->returnValue(200))
-        ;
+            ->will($this->returnValue(200));
 
         $responseMock
             ->expects($this->exactly(2))
             ->method('getBody')
-            ->will($this->returnValue($this->responseContentPage1Fixture))
-        ;
+            ->will($this->returnValue($this->responseContentPage1Fixture));
 
         $this->clientMock
             ->expects($this->exactly(2))
             ->method('get')
-            ->will($this->returnValue($responseMock))
-        ;
+            ->will($this->returnValue($responseMock));
 
         $this->loggerMock
             ->expects($this->exactly(4))
             ->method('log')
-            ->withAnyParameters()
-        ;
+            ->withAnyParameters();
 
-        $command = new ExportCommand('UK', 'ABC123', $this->clientMock, $this->loggerMock);
-        $result = $command->execute();
+
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock, 'ABC123', 'UK');
+        $result = $crawler->crawlItems();
 
         $expectedResult = [
-            ['Product 1', 1.99, 'http://www.amazon.co.uk/product-1', 'test://product-1.png'],
-            ['Product 2', 2.99, 'http://www.amazon.co.uk/product-2', 'test://product-2.png'],
-            ['Product 3', 3.99, 'http://www.amazon.co.uk/product-3', 'test://product-3.png'],
+            ['name' => 'Product 1', 'price' => 1.99, 'url' => 'http://www.amazon.co.uk/product-1', 'image' => 'test://product-1.png'],
+            ['name' => 'Product 2', 'price' => 2.99, 'url' => 'http://www.amazon.co.uk/product-2', 'image' => 'test://product-2.png'],
+            ['name' => 'Product 3', 'price' => 3.99, 'url' => 'http://www.amazon.co.uk/product-3', 'image' => 'test://product-3.png'],
         ];
 
         $this->assertEquals($expectedResult, $result);
@@ -248,45 +261,40 @@ RESPONSE;
         $responseMock
             ->expects($this->exactly(4))
             ->method('getStatusCode')
-            ->will($this->returnValue(200))
-        ;
+            ->will($this->returnValue(200));
 
         $responseMock
             ->expects($this->exactly(4))
             ->method('getBody')
             ->will($this->onConsecutiveCalls(
-                    $this->responseContentPage1Fixture,
-                    $this->responseContentPage2Fixture,
-                    $this->responseContentPage3Fixture,
-                    $this->responseContentPage3Fixture
-                ))
-        ;
+                $this->responseContentPage1Fixture,
+                $this->responseContentPage2Fixture,
+                $this->responseContentPage3Fixture,
+                $this->responseContentPage3Fixture
+            ));
 
         $this->clientMock
             ->expects($this->exactly(4))
             ->method('get')
-            ->will($this->returnValue($responseMock))
-        ;
+            ->will($this->returnValue($responseMock));
 
         $this->loggerMock
             ->expects($this->exactly(6))
             ->method('log')
-            ->withAnyParameters()
-        ;
-
-        $command = new ExportCommand('US', 'ABC123', $this->clientMock, $this->loggerMock);
-        $result = $command->execute();
+            ->withAnyParameters();
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock, 'ABC123', 'US');
+        $result = $crawler->crawlItems();
 
         $expectedResult = [
-            ['Product 1', 1.99, 'http://www.amazon.com/product-1', 'test://product-1.png'],
-            ['Product 2', 2.99, 'http://www.amazon.com/product-2', 'test://product-2.png'],
-            ['Product 3', 3.99, 'http://www.amazon.com/product-3', 'test://product-3.png'],
-            ['Product 4', 4.99, 'http://www.amazon.com/product-4', 'test://product-4.png'],
-            ['Product 5', 5.99, 'http://www.amazon.com/product-5', 'test://product-5.png'],
-            ['Product 6', 6.99, 'http://www.amazon.com/product-6', 'test://product-6.png'],
-            ['Product 7', 7.99, 'http://www.amazon.com/product-7', 'test://product-7.png'],
-            ['Product 8', 8.99, 'http://www.amazon.com/product-8', 'test://product-8.png'],
-            ['Product 9', 9.99, 'http://www.amazon.com/product-9', 'test://product-9.png'],
+            ['name' => 'Product 1', 'price' => 1.99, 'url' => 'http://www.amazon.com/product-1', 'image' => 'test://product-1.png'],
+            ['name' => 'Product 2', 'price' => 2.99, 'url' => 'http://www.amazon.com/product-2', 'image' => 'test://product-2.png'],
+            ['name' => 'Product 3', 'price' => 3.99, 'url' => 'http://www.amazon.com/product-3', 'image' => 'test://product-3.png'],
+            ['name' => 'Product 4', 'price' => 4.99, 'url' => 'http://www.amazon.com/product-4', 'image' => 'test://product-4.png'],
+            ['name' => 'Product 5', 'price' => 5.99, 'url' => 'http://www.amazon.com/product-5', 'image' => 'test://product-5.png'],
+            ['name' => 'Product 6', 'price' => 6.99, 'url' => 'http://www.amazon.com/product-6', 'image' => 'test://product-6.png'],
+            ['name' => 'Product 7', 'price' => 7.99, 'url' => 'http://www.amazon.com/product-7', 'image' => 'test://product-7.png'],
+            ['name' => 'Product 8', 'price' => 8.99, 'url' => 'http://www.amazon.com/product-8', 'image' => 'test://product-8.png'],
+            ['name' => 'Product 9', 'price' => 9.99, 'url' => 'http://www.amazon.com/product-9', 'image' => 'test://product-9.png'],
         ];
 
         $this->assertEquals($expectedResult, $result);
@@ -298,8 +306,7 @@ RESPONSE;
         $responseMock
             ->expects($this->exactly(4))
             ->method('getStatusCode')
-            ->will($this->returnValue(200))
-        ;
+            ->will($this->returnValue(200));
 
         $responseMock
             ->expects($this->exactly(4))
@@ -309,34 +316,31 @@ RESPONSE;
                 $this->responseContentPage2Fixture,
                 $this->responseContentPage3Fixture,
                 $this->responseContentPage3Fixture
-            ))
-        ;
+            ));
 
         $this->clientMock
             ->expects($this->exactly(4))
             ->method('get')
-            ->will($this->returnValue($responseMock))
-        ;
+            ->will($this->returnValue($responseMock));
 
         $this->loggerMock
             ->expects($this->exactly(6))
             ->method('log')
-            ->withAnyParameters()
-        ;
+            ->withAnyParameters();
 
-        $command = new ExportCommand('UK', 'ABC123', $this->clientMock, $this->loggerMock);
-        $result = $command->execute();
 
+        $crawler = new AmazonCrawler($this->clientMock, $this->loggerMock, 'ABC123', 'UK');
+        $result = $crawler->crawlItems();
         $expectedResult = [
-            ['Product 1', 1.99, 'http://www.amazon.co.uk/product-1', 'test://product-1.png'],
-            ['Product 2', 2.99, 'http://www.amazon.co.uk/product-2', 'test://product-2.png'],
-            ['Product 3', 3.99, 'http://www.amazon.co.uk/product-3', 'test://product-3.png'],
-            ['Product 4', 4.99, 'http://www.amazon.co.uk/product-4', 'test://product-4.png'],
-            ['Product 5', 5.99, 'http://www.amazon.co.uk/product-5', 'test://product-5.png'],
-            ['Product 6', 6.99, 'http://www.amazon.co.uk/product-6', 'test://product-6.png'],
-            ['Product 7', 7.99, 'http://www.amazon.co.uk/product-7', 'test://product-7.png'],
-            ['Product 8', 8.99, 'http://www.amazon.co.uk/product-8', 'test://product-8.png'],
-            ['Product 9', 9.99, 'http://www.amazon.co.uk/product-9', 'test://product-9.png'],
+            ['name' => 'Product 1', 'price' => 1.99, 'url' => 'http://www.amazon.co.uk/product-1', 'image' => 'test://product-1.png'],
+            ['name' => 'Product 2', 'price' => 2.99, 'url' => 'http://www.amazon.co.uk/product-2', 'image' => 'test://product-2.png'],
+            ['name' => 'Product 3', 'price' => 3.99, 'url' => 'http://www.amazon.co.uk/product-3', 'image' => 'test://product-3.png'],
+            ['name' => 'Product 4', 'price' => 4.99, 'url' => 'http://www.amazon.co.uk/product-4', 'image' => 'test://product-4.png'],
+            ['name' => 'Product 5', 'price' => 5.99, 'url' => 'http://www.amazon.co.uk/product-5', 'image' => 'test://product-5.png'],
+            ['name' => 'Product 6', 'price' => 6.99, 'url' => 'http://www.amazon.co.uk/product-6', 'image' => 'test://product-6.png'],
+            ['name' => 'Product 7', 'price' => 7.99, 'url' => 'http://www.amazon.co.uk/product-7', 'image' => 'test://product-7.png'],
+            ['name' => 'Product 8', 'price' => 8.99, 'url' => 'http://www.amazon.co.uk/product-8', 'image' => 'test://product-8.png'],
+            ['name' => 'Product 9', 'price' => 9.99, 'url' => 'http://www.amazon.co.uk/product-9', 'image' => 'test://product-9.png'],
         ];
 
         $this->assertEquals($expectedResult, $result);

@@ -1,5 +1,5 @@
 {
-  "name": "yuriteixeira/amazon-wishlist-exporter",
+  "name": "schmiddim/amazon-wish-lister",
   "description": "Simple script that parses a public amazon wishlist and export the items to a CSV file.",
   "keywords": [
     "amazon",
@@ -22,7 +22,12 @@
   "require": {
     "guzzlehttp/guzzle": "*",
     "symfony/dom-crawler": "*",
-    "symfony/css-selector": "*"
+    "symfony/css-selector": "*",
+    "monolog/monolog": "^1.19",
+    "php-console/php-console": "~3.0",
+    "schmiddim/amazon-asin-fetcher" :"dev-master"
+
+
   },
   "require-dev": {
     "phpunit/phpunit": "3.7.*"

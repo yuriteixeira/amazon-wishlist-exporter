@@ -2,112 +2,83 @@
 
 namespace AmazonWishlistExporter\Command;
 
-use AmazonWishlistExporter\Logger\LoggerInterface;
-use GuzzleHttp\ClientInterface;
-use Symfony\Component\DomCrawler\Crawler;
+use AmazonWishlistExporter\Crawler\AmazonCrawler;
+use GuzzleHttp\Client;
+use Psr\Log\LoggerInterface;
 
 class ExportCommand implements CommandInterface
 {
-    /**
-     * @var string
-     */
-    private $countryCode;
+	/**
+	 * @var string
+	 */
+	private $countryCode;
 
-    /**
-     * @var string
-     */
-    private $whishlistId;
+	/**
+	 * @var string
+	 */
+	private $wishlistId;
 
-    /**
-     * @var \GuzzleHttp\ClientInterface
-     */
-    private $client;
+	/**
+	 * @var \GuzzleHttp\Client
+	 */
+	private $client;
 
-    /**
-     * @var \AmazonWishlistExporter\Logger\LoggerInterface
-     */
-    private $logger;
+	/**
+	 * @var LoggerInterface
+	 */
+	private $logger;
 
-    public function __construct(
-        $countryCode,
-        $wishlistId,
-        ClientInterface $client,
-        LoggerInterface $logger
-    ) {
-        $this->countryCode = $countryCode;
-        $this->whishlistId = $wishlistId;
-        $this->client = $client;
-        $this->logger = $logger;
-    }
+	/**
+	 * @var string
+	 */
+	private $pathToSave;
 
-    public function execute()
-    {
-        $page = 1;
-        $lastItemsContent = null;
-        $rows = [];
-        $baseUrl = $this->getBaseUrlForCountry($this->countryCode);
-        $wishlistBaseUrl = "{$baseUrl}/registry/wishlist/{$this->whishlistId}?layout=standard";
-        
-        if (!$baseUrl) {
-            throw new \InvalidArgumentException("Country code {$this->countryCode} is not supported.");
-        }
+	/**
+	 * ExportCommand constructor.
+	 * @param $countryCode
+	 * @param $wishlistId
+	 * @param Client $client
+	 * @param LoggerInterface $logger
+	 * @param $pathToSave
+	 */
+	public function __construct(
+		$countryCode,
+		$wishlistId,
+		Client $client,
+		LoggerInterface $logger,
+		$pathToSave
+	)
+	{
+		$this->countryCode = $countryCode;
+		$this->wishlistId = $wishlistId;
+		$this->client = $client;
+		$this->logger = $logger;
+		$this->pathToSave = $pathToSave;
 
-        $this->logger->log("Exporting: {$wishlistBaseUrl}");
+	}
 
-        while (true) {
-            $url = "{$wishlistBaseUrl}&page={$page}";
-            $response = $this->client->get($url);
-            $responseContent = (string) $response->getBody();
-            $crawler = new Crawler($responseContent);
-            $items = $crawler->filter('[id^=item_]');
+	/**
+	 * fetch wishlist and write CSV
+	 */
+	public function execute()
+	{
+		$amazonCrawler = new AmazonCrawler($this->client, $this->logger);
 
-            if ($response->getStatusCode() != 200 || !$items->count()) {
-                $this->logger->log('Empty content (are you sure that you set your list as public?)');
-                break;
-            }
+		$amazonCrawler->setCountryCode($this->countryCode);
+		$amazonCrawler->setWishlistId($this->wishlistId);
 
-            if ($items->text() == $lastItemsContent) {
-                $this->logger->log('Current content is repeating last content');
-                break;
-            }
+		$items = $amazonCrawler->crawlItems();
 
-            $items->each(function (Crawler $item) use (&$rows, $baseUrl) {
-                $name = trim($item->filter('[id^=itemName_]')->text());
-                $price = (float) str_replace('$', '', trim($item->filter('[id^=itemPrice_]')->text()));
+		$items = array_merge([['Name', 'Price', 'Url', 'Image']], $items);
 
-                $url = 
-                    $item->filter('[id^=itemName_]')->attr('href') ?
-                        $baseUrl . $item->filter('[id^=itemName_]')->attr('href') : 
-                        $item->filter('[id^=itemInfo_] .a-link-normal')->attr('href');
+		// Saving each item row to the file
+		$fh = fopen($this->pathToSave, 'w');
+		foreach ($items as $item) {
+			fputcsv($fh, $item);
+		}
 
-                $image = trim($item->filter('[id^=itemImage_] img')->attr('src'));
-                $rows[] = array($name, $price, $url, $image);
-            });
+		fclose($fh);
+	}
 
-            $this->logger->log("Parsed page {$page} - Url: {$url}");
 
-            $lastItemsContent = $items->text();
-            ++$page;
-        }
-
-        $this->logger->log("Finished");
-
-        return $rows;
-    }
-
-    /**
-     * @param $countryCode
-     * @return string|null
-     */
-    private function getBaseUrlForCountry($countryCode)
-    {
-        $baseUrlsByCountry = [
-            'US' => 'http://www.amazon.com',
-            'UK' => 'http://www.amazon.co.uk',
-        ];
-
-        $baseUrl = !empty($baseUrlsByCountry[$countryCode]) ? $baseUrlsByCountry[$countryCode] : null;
-
-        return $baseUrl;
-    }
 }
