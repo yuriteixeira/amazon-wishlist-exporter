@@ -62,7 +62,11 @@ class ExportCommand implements CommandInterface
 	 */
 	public function execute()
 	{
-		$amazonCrawler = new AmazonCrawler($this->client, $this->logger, $this->wishlistId, $this->countryCode);
+		$amazonCrawler = new AmazonCrawler($this->client, $this->logger);
+
+		$amazonCrawler->setCountryCode($this->countryCode);
+		$amazonCrawler->setWishlistId($this->wishlistId);
+
 		$items = $amazonCrawler->crawlItems();
 
 		$items = array_merge([['Name', 'Price', 'Url', 'Image']], $items);

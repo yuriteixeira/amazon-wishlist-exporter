@@ -56,12 +56,12 @@ class AmazonCrawler
 	/**
 	 * @var integer
 	 */
-	private $wishlistId;
+	private $wishlistId = null;
 
 	/**
 	 * @var string
 	 */
-	private $countryCode;
+	private $countryCode = null;
 
 	/**
 	 * AmazonCrawler constructor.
@@ -70,12 +70,11 @@ class AmazonCrawler
 	 * @param $wishlistId
 	 * @param $countryCode
 	 */
-	public function __construct(Client $client, LoggerInterface $logger, $wishlistId, $countryCode)
+	public function __construct(Client $client, LoggerInterface $logger)
 	{
 		$this->client = $client;
 		$this->logger = $logger;
-		$this->wishlistId = $wishlistId;
-		$this->countryCode = $countryCode;
+
 
 	}
 
@@ -159,7 +158,7 @@ class AmazonCrawler
 	 */
 	protected function getWishlistBaseUrl()
 	{
-		return "{$this->getBaseUrlForCountry($this->countryCode)}/registry/wishlist/{$this->wishlistId}?layout=standard";
+		return "{$this->getBaseUrlForCountry($this->getCountryCode())}/registry/wishlist/{$this->getWishlistId()}?layout=standard";
 	}
 
 	/**
@@ -170,7 +169,7 @@ class AmazonCrawler
 		$page = 1;
 		$lastItemsContent = null;
 		$rows = [];
-		$baseUrl = $this->getBaseUrlForCountry($this->countryCode);
+		$baseUrl = $this->getBaseUrlForCountry($this->getCountryCode());
 		$wishlistBaseUrl = $this->getWishlistBaseUrl();
 
 
@@ -195,7 +194,7 @@ class AmazonCrawler
 
 			$items->each(function (Crawler $item) use (&$rows, $baseUrl) {
 				$name = trim($item->filter('[id^=itemName_]')->text());
-				$price = $this->parsePrice($item->filter('[id^=itemPrice_]')->text(), $this->countryCode);
+				$price = $this->parsePrice($item->filter('[id^=itemPrice_]')->text(), $this->getCountryCode());
 				$url =
 					$item->filter('[id^=itemName_]')->attr('href') ?
 						$baseUrl . $item->filter('[id^=itemName_]')->attr('href') :
@@ -220,4 +219,44 @@ class AmazonCrawler
 
 		return $rows;
 	}
+
+	/**
+	 * @return int
+	 */
+	public function getWishlistId()
+	{
+		if(null === $this->wishlistId) {
+			throw new \Exception('WishlistId not set');
+		}
+		return $this->wishlistId;
+	}
+
+	/**
+	 * @param int $wishlistId
+	 */
+	public function setWishlistId($wishlistId)
+	{
+		$this->wishlistId = $wishlistId;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getCountryCode()
+	{
+		if(null === $this->countryCode) {
+			throw new \Exception('Country Code not set');
+		}
+		return $this->countryCode;
+	}
+
+	/**
+	 * @param string $countryCode
+	 */
+	public function setCountryCode($countryCode)
+	{
+		$this->countryCode = $countryCode;
+	}
+
+
 }
